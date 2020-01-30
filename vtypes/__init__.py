@@ -2,9 +2,9 @@
 #
 #  Copyright (c) Schneider Electric Industries, 2020. All right reserved.
 
-from vtypes.core import VType
+from vtypes.core import vtype
 
 __all__ = [
     'core',
-    'VType'
+    'vtype'
 ]

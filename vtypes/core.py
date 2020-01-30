@@ -2,6 +2,7 @@
 #
 #  Copyright (c) Schneider Electric Industries, 2020. All right reserved.
 from abc import ABCMeta
+from inspect import currentframe, getmodule
 
 from six import with_metaclass
 
@@ -18,9 +19,9 @@ from valid8.entry_points import Validator, ValidationError
 
 def _process_validators(validators  # type: ValidationFuncs
                         ):
-    # type: (...) -> Optional[Iterable[ValidationFuncDefinition, Mapping[VFDefinitionElement, Union[VFDefinitionElement, Tuple[VFDefinitionElement, ...]]]]]
+    # type: (...) -> Tuple[Union[ValidationFuncDefinition, Mapping[VFDefinitionElement, Union[VFDefinitionElement, Tuple[VFDefinitionElement, ...]]]], ...]
     """
-    Transforms validators into an iterable for sure, or none
+    Transforms validators into a tuple
     :param validators:
     :return:
     """
@@ -51,88 +52,6 @@ def _process_validators(validators  # type: ValidationFuncs
     return validators
 
 
-class VTypeMeta(ABCMeta):
-    """
-    The metaclass for VTypes. It implements `isinstance` according to the expected behaviour.
-
-    When a class inherits from `VType`, it is manipulated by the `VTypeMeta` metaclass upon creation
-    so that its `__types__` and `__validators__` represent the synthesis of all of its ancestors.
-    """
-    def __new__(mcls, name, bases, attrs):
-        try:
-            # is mcls the original VType class ?
-            VType
-        except NameError:
-            # yes: shortcut just create it
-            return super(VTypeMeta, mcls).__new__(mcls, name, bases, attrs)
-        else:
-            # no: a derived class. Let's consolidate the types and validators of all the bases
-            _types = []
-            _validators = []
-
-            for b in bases:
-                if b is VType or b is object:
-                    continue
-
-                # is this a vtype ?
-                try:
-                    _isvtype = b.is_vtype()
-                except AttributeError:
-                    _isvtype = False
-                if _isvtype:
-                    # yes: combine types and validators
-                    _types += b.__types__
-                    _validators += b.__validators__
-                else:
-                    # no: append to types
-                    _types.append(b)
-
-            # final __types__
-            try:
-                # is there a __types__ attribute on the final class ?
-                _lasttypes_ = attrs['__types__']
-            except KeyError:
-                # no - only use the consolidated types (if any)
-                pass
-            else:
-                # yes - (a) auto-convert types to tuple of types if needed and (b) combine with inherited
-                if isinstance(_lasttypes_, type):
-                    _types.append(_lasttypes_)
-                else:
-                    _types += _lasttypes_
-            if len(_types) > 0:
-                attrs['__types__'] = tuple(_types)
-
-            # final __validators__
-            try:
-                # is there a __validators__ attribute on the final class ?
-                _lastvalidators_ = attrs['__validators__']
-            except KeyError:
-                # no - only use the consolidated validators *if any*
-                pass
-            else:
-                # yes - combine with the inherited if any
-                _lastvalidators_ = _process_validators(_lastvalidators_)
-                _validators += _lastvalidators_
-
-            if len(_validators) > 0:
-                attrs['__validators__'] = tuple(_validators)
-
-            return super(VTypeMeta, mcls).__new__(mcls, name, bases, attrs)
-
-    def __init__(cls,  # type: VType
-                 name, bases, attrs):
-        super(VTypeMeta, cls).__init__(name, bases, attrs)
-        cls.init_validator()
-
-    def __instancecheck__(cls,  # type:  Type[VType]
-                          obj):
-        return isinstance(obj, cls.__types__) and cls.has_valid_value(obj)
-
-    def __subclasscheck__(cls, subclass):
-        raise Exception("Subclass check can not be performed on a VType yet.")
-
-
 class VTypeValidator(Validator):
     """
     Represents a `Validator` responsible to validate a `vtype`
@@ -140,7 +59,7 @@ class VTypeValidator(Validator):
     __slots__ = '__weakref__', 'vtype'
 
     def __init__(self,
-                 vtype,       # type: VType
+                 vtype,       # type: VTypeMeta
                  validators,  # type: ValidationFuncs
                  **kwargs
                  ):
@@ -150,47 +69,162 @@ class VTypeValidator(Validator):
         super(VTypeValidator, self).__init__(*validators, **kwargs)
 
 
-class VType(with_metaclass(VTypeMeta, object)):
+class _TypesGetter(object):
     """
-    The super class of all `VType`s.
-
-    When a class inherits from `VType`, it is manipulated by the `VTypeMeta` metaclass upon creation
-    so that its `__types__` and `__validators__` represent the synthesis of all of its ancestors.
-
-    Also at class creation time a `VTypeValidator` instance is created, that will be used in all subsequent checks.
-    Therefore if you dynamically update `__validators__`, you should explicitly call `cls.init_validator()` to refresh
-    the validator associated with the class.
+    A virtual property returning the __bases__ without the VType
     """
-    __types__ = ()         # type: Union[Type, Tuple[Type]]
-    __validators__ = ()    # type: ValidationFuncs
-    __error_type__ = None  # type: Type[ValidationError]
-    __help_msg__ = None    # type: str
+    def __get__(self, obj, owner):
+        return tuple(t for t in owner.__bases__ if t is not VType)
 
-    _validator = None      # type: Validator
 
-    @classmethod
-    def is_vtype(cls):
-        # type: (...) -> bool
+types_getter = _TypesGetter()
+
+
+class VTypeMeta(ABCMeta):
+    """
+    The metaclass for VTypes.
+
+    It inherits from ABCMeta so that a VType can be registered as a virtual ancestor of anything.
+
+    It implements `isinstance` according to the expected behaviour: an object is an instance of a VType if
+     - it is an instance of all of its bases except VType (The __type__ virtual property contains the tuple of
+       __bases__ without VType)
+     - and it passes validation described by the __validators__
+
+    When a class using this metaclass is created, various checks are made to ensure that users will not create VTypes
+    with other contents than base types and validators.
+    """
+    ATTRS = ('__type__', '__validators__', '__help_msg__', '__error_type__', '__module__', '__qualname__')
+
+    def __new__(mcls, name, bases, attrs):
         """
-        Used by the metaclass to determine if a class is a vtype
-        :return:
-        """
-        return True
+        Called when the new VType is created.
 
-    @classmethod
-    def init_validator(cls):
+        :param name:
+        :param bases:
+        :param attrs:
+        """
+        try:
+            # is mcls the original VType class ?
+            VType
+        except NameError:
+            # yes: shortcut just create it
+            return super(VTypeMeta, mcls).__new__(mcls, name, bases, attrs)
+        else:
+            # this is a new VType
+            if not any(issubclass(b, VType) for b in bases):
+                raise TypeError("It is not possible to create a VType without inheriting from `VType`. "
+                                "Found %r" % (bases,))
+
+            # remove VType from the bases if it is present
+            # bases = tuple(b for b in bases if b is not VType)
+            # NO --> we leave it so that subclass check works ; but we remove it when checking.
+
+            # merge the __type__ and the bases to form the actual bases
+            try:
+                # is there a __type__ attribute on the class ?
+                _types_ = attrs.pop('__type__')
+            except KeyError:
+                # no - only use the bases 'as is'
+                pass
+            else:
+                # yes - make the type inherit from all of the __type__
+                if isinstance(_types_, type):
+                    bases = (_types_, ) + bases
+                else:
+                    bases = tuple(_types_) + bases
+
+            # make sure that attrs does not contain anything else
+            extra = set(attrs).difference(set(VTypeMeta.ATTRS))
+            if len(extra) > 0:
+                raise TypeError("a VType can not define any class attribute except for %r. Found: %r"
+                                % (VTypeMeta.ATTRS, extra))
+
+            # finally create the type
+            return super(VTypeMeta, mcls).__new__(mcls, name, bases, attrs)
+
+    def __init__(cls,    # type: VTypeMeta
+                 name,   # type: str
+                 bases,
+                 attrs):
+        """
+        Constructor for the VType. It initializes the embedded validator
+
+        :param name:
+        :param bases:
+        :param attrs:
+        """
+        super(VTypeMeta, cls).__init__(name, bases, attrs)
+
+        cls.init_vtype()
+
+    def init_vtype(cls):
         """
         Used by the metaclass to create the validator when the class is instantiated
         :return:
         """
-        _vs = cls.__validators__
-        if len(_vs) > 0:
-            cls._validator = Validator(*_vs, help_msg=cls.__help_msg__, error_type=cls.__error_type__)
+        # assign a class property that will return the tuple of base types checked against
+        cls.__type__ = types_getter
 
-    def __init__(self):
+        # make sure the validators become an iterable
+        try:
+            # are there specific validators on this class ?
+            _vs = cls.__dict__['__validators__']
+        except KeyError:
+            # no - nothing to do
+            pass
+        else:
+            # yes: make them a nice tuple and create the validator
+            _vs = _process_validators(_vs)
+            cls.__validators__ = _vs
+
+            # create the associated validator
+            if len(_vs) > 0:
+                cls._validator = VTypeValidator(cls, _vs, help_msg=cls.__help_msg__, error_type=cls.__error_type__)
+
+    def __call__(cls, *args, **kwargs):
+        """
+        Constructors are disabled on VTypes
+
+        :param args:
+        :param kwargs:
+        :return:
+        """
         raise Exception("It does not make sense to instantiate a VType")
 
-    @classmethod
+    # --------------- checkers
+
+    def __instancecheck__(cls,  # type:  VTypeMeta
+                          obj):
+        """
+        The 'core' of VType logic: instance check relies on both type and value
+
+        :param obj:
+        :return:
+        """
+        return cls.has_valid_type(obj) and cls.has_valid_value(obj)
+
+    # def __subclasscheck__(cls,  # type:  VTypeMeta
+    #                       subclass):
+    #     """
+    #
+    #     :param subclass:
+    #     :return:
+    #     """
+    #     if cls is subclass:                    # trivial identity
+    #         return True
+    #     elif type(subclass) is not VTypeMeta:  # subclass is not a VType
+    #         return False
+    #     elif cls in subclass.__bases__:        # the parent is directly one of the bases of the child
+    #         return True
+    #
+    #     # first the type should be compliant with all
+    #     if not all(issubclass(subclass, parent_base) for parent_base in cls.__bases__):
+    #         return False
+    #
+    #     # then
+    #     return len(cls.__validators__) == 0
+
     def assert_valid(cls,
                      name,  # type: str
                      val
@@ -204,7 +238,8 @@ class VType(with_metaclass(VTypeMeta, object)):
         :return:
         """
         # validate type
-        validate(name, val, instance_of=cls.__types__, help_msg=cls.__help_msg__, error_type=cls.__error_type__)
+        for typ in cls.__type__:
+            validate(name, val, instance_of=typ, help_msg=cls.__help_msg__, error_type=cls.__error_type__)
 
         # apply validators
         if cls._validator is not None:
@@ -212,29 +247,171 @@ class VType(with_metaclass(VTypeMeta, object)):
 
     # --- boolean checks (no exception) ---
 
-    @classmethod
-    def has_valid_type(cls, obj):
-        # type: (...) -> bool
-        """
+    # not very interesting now that in the type bases there can be value checkers
 
-        :param obj:
-        :return:
-        """
-        return isinstance(obj, cls.__types__)
+    # def has_valid_type(cls, obj):
+    #     # type: (...) -> bool
+    #     """
+    #
+    #     :param obj:
+    #     :return:
+    #     """
+    #     # should be an instance of all base types (except VType)
+    #     return all(isinstance(obj, t) for t in cls.__bases__ if t is not VType)  # same than __type__
+    #
+    # def has_valid_value(cls, obj):
+    #     # type: (...) -> bool
+    #     """
+    #
+    #     :param obj:
+    #     :return:
+    #     """
+    #     try:
+    #         cls._validator.assert_valid('unnamed', obj)
+    #     except (AttributeError,  # cls._validator is None
+    #             ValidationError  # cls._validator is not None
+    #             ):
+    #         return False
+    #     else:
+    #         return True
 
-    @classmethod
-    def has_valid_value(cls, obj):
-        # type: (...) -> bool
-        """
 
-        :param obj:
-        :return:
-        """
-        try:
-            cls._validator.assert_valid('unnamed', obj)
-        except (AttributeError,  # cls._validator is None
-                ValidationError  # cls._validator is not None
-                ):
-            return False
-        else:
-            return True
+class VType(with_metaclass(VTypeMeta, object)):
+    """
+    The super class of all `VType`s.
+
+    When a class inherits from `VType`, it is manipulated by the `VTypeMeta` metaclass upon creation
+    so that its `__type__` and `__validators__` represent the synthesis of all of its ancestors.
+
+    Also at class creation time a `VTypeValidator` instance is created, that will be used in all subsequent checks.
+    Therefore if you dynamically update `__validators__`, you should explicitly call `cls.init_vtype()` to refresh
+    the validator associated with the class.
+    """
+    __type__ = ()          # type: Union[Type, Tuple[Type]]
+    __validators__ = ()    # type: ValidationFuncs
+    __error_type__ = None  # type: Type[ValidationError]
+    __help_msg__ = None    # type: str
+
+    _validator = None      # type: Validator
+
+    # @classmethod
+    # def is_vtype(cls):
+    #     # type: (...) -> bool
+    #     """
+    #     Used by the metaclass to determine if a class is a vtype
+    #     :return:
+    #     """
+    #     return True
+
+    # @classmethod
+    # def init_vtype(cls):
+    #     """
+    #     Used by the metaclass to create the validator when the class is instantiated
+    #     :return:
+    #     """
+    #     # make sure the types become a tuple
+    #     # try:
+    #     #     cls.__type__ = tuple(cls.__type__)
+    #     # except TypeError:
+    #     #     cls.__type__ = (cls.__type__, )
+    #
+    #     cls.__type__ = classproperty()
+    #
+    #     # make sure the validators become an iterable
+    #     _vs = _process_validators(cls.__validators__)
+    #     cls.__validators__ = _vs
+    #
+    #     # create the associated validator
+    #     if len(_vs) > 0:
+    #         cls._validator = Validator(*_vs, help_msg=cls.__help_msg__, error_type=cls.__error_type__)
+
+    def __init__(self):
+        raise Exception("It does not make sense to instantiate a VType")
+
+    # @classmethod
+    # def assert_valid(cls,
+    #                  name,  # type: str
+    #                  val
+    #                  ):
+    #     """
+    #     Class method that can be used to check if some value is valid. A name should be provided so that the
+    #     error messages are human-friendly.
+    #
+    #     :param name:
+    #     :param val:
+    #     :return:
+    #     """
+    #     # validate type
+    #     validate(name, val, instance_of=cls.__type__, help_msg=cls.__help_msg__, error_type=cls.__error_type__)
+    #
+    #     # apply validators
+    #     if cls._validator is not None:
+    #         cls._validator.assert_valid(name, val, help_msg=cls.__help_msg__, error_type=cls.__error_type__)
+    #
+    # # --- boolean checks (no exception) ---
+    #
+    # @classmethod
+    # def has_valid_type(cls, obj):
+    #     # type: (...) -> bool
+    #     """
+    #
+    #     :param obj:
+    #     :return:
+    #     """
+    #     return all(isinstance(obj, t) for t in cls.__type__)
+    #
+    # @classmethod
+    # def has_valid_value(cls, obj):
+    #     # type: (...) -> bool
+    #     """
+    #
+    #     :param obj:
+    #     :return:
+    #     """
+    #     try:
+    #         cls._validator.assert_valid('unnamed', obj)
+    #     except (AttributeError,  # cls._validator is None
+    #             ValidationError  # cls._validator is not None
+    #             ):
+    #         return False
+    #     else:
+    #         return True
+
+
+# noinspection PyShadowingBuiltins
+def vtype(name,            # type: str
+          base=(),         # type: Union[Type, Tuple[Type]]
+          validators=(),   # type: ValidationFuncs
+          help_msg=None,   # type: str
+          error_type=None  # type: Type[ValidationError]
+          ):
+    # type: (...) -> Union[Type[VType], VTypeMeta]
+    """
+    Creates a new Validating Type, a subclass of VType.
+
+    :param name: the name for the VType to create
+    :param base: an optional type or tuple of types that will be used for type checking with `isinstance()`.
+    :param validators: an optional validator or group of validators, following the valid8 syntax (either a callable,
+        tuple, list, or dict).
+    :return:
+    """
+    new_type = VTypeMeta(name, (VType,), dict(__type__=base, __validators__=validators,
+                                              __help_msg__=help_msg, __error_type__=error_type))
+    new_type.__module__ = get_caller_module().__name__
+    return new_type
+
+
+def get_caller_module(frame_offset=1):
+    # grab context from the caller frame
+    frame = _get_callerframe(offset=frame_offset)
+    return getmodule(frame)
+
+
+def _get_callerframe(offset=0):
+    # inspect.stack is extremely slow, the fastest is sys._getframe or inspect.currentframe().
+    # See https://gist.github.com/JettJones/c236494013f22723c1822126df944b12
+    # frame = sys._getframe(2 + offset)
+    frame = currentframe()
+    for _ in range(2 + offset):
+        frame = frame.f_back
+    return frame
