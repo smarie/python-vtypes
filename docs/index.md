@@ -6,7 +6,7 @@
 
 *Validating types for python - use `isinstance()` to validate both type and value.*
 
-`vtypes` is a small library to define "validating types". These types can be used anywhere where you usually check type with `isinstance()`, so add value validation. This can be used to make validation schemas more readable (for example in [`pyfields`](https://smarie.github.io/python-pyfields/#3-autofields)).
+`vtypes` is a small library to define "validating types". These types can be used to add value validation on top of type checking anywhere where you usually rely on `isinstance()`. This can in particular be used to make validation schemas simpler and more readable, for example used in [`pyfields`](https://smarie.github.io/python-pyfields/#3-autofields).
 
 
 ## Installing
@@ -17,7 +17,41 @@
 
 ## Usage
 
-**TODO**
+### a - basics
+
+You create a `VType` by combining one or several base types with optional value validators following the [`valid8` simple syntax](https://smarie.github.io/python-valid8/validation_funcs/c_simple_syntax/).
+
+For example we can create a positive int:
+
+```python
+from vtypes import vtype
+
+PositiveInt = vtype('PositiveInt', int, {'should be positive': lambda x: x >= 0})
+```
+
+`isinstance` works as expected:
+
+```python
+assert isinstance(1, PositiveInt)
+assert not isinstance(-1, PositiveInt)
+```
+
+You can also get a more detailed error if you wish:
+
+```python
+>>> PositiveInt.assert_valid('x', -1)
+ValidationError[ValueError]: Error validating [x=-1]. 
+   InvalidValue: should be positive. Function [<lambda>] returned [False] for value -1.
+```
+
+### b - composition
+
+You can combine types, for example a positive int can be obtained by mixing `Positive` and `int`:
+
+```python
+TODO
+```
+
 
 ## Main features
 
