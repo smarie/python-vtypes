@@ -10,11 +10,15 @@ from vtypes.core import VType, VTypeMeta
 from vtypes import vtype
 
 
+@pytest.mark.parametrize('val_to_test,valid_type, valid_value',
+                         [(1, True, True),
+                          (-1, True, False),
+                          ('1', False, True)])
 @pytest.mark.parametrize("validator_style", ['callable', 'tuple', 'dict', 'list'],
                          ids="validator_style={}".format)
 @pytest.mark.parametrize("vtype_style", ['function', 'class_unofficial'],
                          ids="vtype_style={}".format)
-def test_vtype_basic(validator_style, vtype_style):
+def test_vtype_basic(validator_style, vtype_style, val_to_test, valid_type, valid_value):
 
     if validator_style == 'callable':
         validators = lambda x: x >= 0
@@ -40,15 +44,17 @@ def test_vtype_basic(validator_style, vtype_style):
     # internals check
     assert PositiveInt.__type__ == (int, )
 
-    # usage of the vtype for validation
-    assert isinstance(1, PositiveInt)
-    assert not isinstance(-1, PositiveInt)
-    with pytest.raises(ValidationError):
-        PositiveInt.assert_valid('x', -1)
-
-    assert not isinstance('1', PositiveInt)
-    with pytest.raises(ValidationError):
-        PositiveInt.assert_valid('x', '1')
+    # values test
+    if valid_type and valid_value:
+        assert isinstance(val_to_test, PositiveInt)
+        PositiveInt.assert_valid('s', val_to_test)
+    else:
+        assert not isinstance(val_to_test, PositiveInt)
+        with pytest.raises(ValidationError):
+            PositiveInt.assert_valid('s', val_to_test)
+    assert PositiveInt.has_valid_type(val_to_test) is valid_type
+    assert PositiveInt.has_valid_value(val_to_test) is valid_value
+    assert PositiveInt.has_valid_value(val_to_test, inherited_validators=False) is valid_value
 
     # intuitive subclass behaviour
     assert issubclass(VType, VType)
@@ -58,11 +64,22 @@ def test_vtype_basic(validator_style, vtype_style):
     assert issubclass(PositiveInt, int)
     assert not issubclass(int, PositiveInt)
 
+    for cls in (PositiveInt, ):
+        assert '__type__' in cls.__dict__
+        assert '__validators__' in cls.__dict__
+        assert '_validator' in cls.__dict__
+
     # make sure the string representation will be correct
     assert PositiveInt.__module__ == test_vtype_basic.__module__
 
 
-def test_vtypes_inheritance():
+@pytest.mark.parametrize('val_to_test,valid_type, valid_value',
+                         [('1', True, True),
+                          ('', True, False),
+                          (1, False, False)])
+def test_vtypes_inheritance(val_to_test, valid_type, valid_value):
+    """ Test with inherited vtypes """
+
     with pytest.raises(TypeError):
         class NonEmpty(with_metaclass(VTypeMeta, object)):
             __validators__ = {'should be non empty': lambda x: len(x) > 0}
@@ -73,9 +90,18 @@ def test_vtypes_inheritance():
     class NonEmptyStr(NonEmpty, str):
         pass
 
-    assert isinstance('1', NonEmptyStr)
-    assert not isinstance('', NonEmptyStr)
-    assert not isinstance(1, NonEmptyStr)
+    # values test
+    if valid_type and valid_value:
+        assert isinstance(val_to_test, NonEmptyStr)
+        NonEmptyStr.assert_valid('s', val_to_test)
+    else:
+        assert not isinstance(val_to_test, NonEmptyStr)
+        with pytest.raises(ValidationError):
+            NonEmptyStr.assert_valid('s', val_to_test)
+    assert NonEmptyStr.has_valid_type(val_to_test) is valid_type
+    assert NonEmptyStr.has_valid_value(val_to_test) is valid_value
+    # this one is always True since we do not look at inherited
+    assert NonEmptyStr.has_valid_value(val_to_test, inherited_validators=False) is True
 
     # intuitive subclass behaviour
     assert issubclass(NonEmptyStr, NonEmpty)
@@ -84,3 +110,8 @@ def test_vtypes_inheritance():
     assert not issubclass(str, NonEmptyStr)
     assert issubclass(NonEmptyStr, VType)
     assert not issubclass(VType, NonEmptyStr)
+
+    for cls in (NonEmpty, NonEmptyStr):
+        assert '__type__' in cls.__dict__
+        assert '__validators__' in cls.__dict__
+        assert '_validator' in cls.__dict__

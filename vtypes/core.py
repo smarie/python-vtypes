@@ -69,15 +69,15 @@ class VTypeValidator(Validator):
         super(VTypeValidator, self).__init__(*validators, **kwargs)
 
 
-class _TypesGetter(object):
-    """
-    A virtual property returning the __bases__ without the VType
-    """
-    def __get__(self, obj, owner):
-        return tuple(t for t in owner.__bases__ if t is not VType)
-
-
-types_getter = _TypesGetter()
+# class _TypesGetter(object):
+#     """
+#     A virtual property returning the __bases__ without the VType
+#     """
+#     def __get__(self, obj, owner):
+#         return tuple(t for t in owner.__bases__ if t is not VType)
+#
+#
+# types_getter = _TypesGetter()
 
 
 class VTypeMeta(ABCMeta):
@@ -158,21 +158,36 @@ class VTypeMeta(ABCMeta):
 
         cls.init_vtype()
 
+        # now all of these should be valid (removeds for speed)
+        # assert '__type__' in cls.__dict__
+        # assert '__validators__' in cls.__dict__
+        # assert '_validator' in cls.__dict__
+
     def init_vtype(cls):
         """
-        Used by the metaclass to create the validator when the class is instantiated
+        Used by the metaclass to create the validator when the class is instantiated.
+        This method ensures that a created class has explicit `__type__`, `__validators__` and
+        `_validator` fields so that inheritance from bases is bypassed.
         :return:
         """
         # assign a class property that will return the tuple of base types checked against
-        cls.__type__ = types_getter
+        # cls.__type__ = types_getter
+        try:
+            VType
+        except NameError:
+            # this is the VType type
+            pass
+        else:
+            cls.__type__ = tuple(t for t in cls.__bases__ if t is not VType)
 
         # make sure the validators become an iterable
         try:
             # are there specific validators on this class ?
             _vs = cls.__dict__['__validators__']
         except KeyError:
-            # no - nothing to do
-            pass
+            # no - nothing to do except creating an empty validators field
+            cls.__validators__ = ()
+            cls._validator = None
         else:
             # yes: make them a nice tuple and create the validator
             _vs = _process_validators(_vs)
@@ -202,7 +217,12 @@ class VTypeMeta(ABCMeta):
         :param obj:
         :return:
         """
-        return cls.has_valid_type(obj) and cls.has_valid_value(obj)
+        # first make sure that `obj` is an instance of all bases (this includes value validation in case of VTypes)
+        if not all(isinstance(obj, t) for t in cls.__bases__ if t is not VType):
+            return False
+
+        # then validate the value with validators on this class
+        return cls.has_valid_value(obj, inherited_validators=False)
 
     # def __subclasscheck__(cls,  # type:  VTypeMeta
     #                       subclass):
@@ -249,31 +269,63 @@ class VTypeMeta(ABCMeta):
 
     # not very interesting now that in the type bases there can be value checkers
 
-    # def has_valid_type(cls, obj):
-    #     # type: (...) -> bool
-    #     """
-    #
-    #     :param obj:
-    #     :return:
-    #     """
-    #     # should be an instance of all base types (except VType)
-    #     return all(isinstance(obj, t) for t in cls.__bases__ if t is not VType)  # same than __type__
-    #
-    # def has_valid_value(cls, obj):
-    #     # type: (...) -> bool
-    #     """
-    #
-    #     :param obj:
-    #     :return:
-    #     """
-    #     try:
-    #         cls._validator.assert_valid('unnamed', obj)
-    #     except (AttributeError,  # cls._validator is None
-    #             ValidationError  # cls._validator is not None
-    #             ):
-    #         return False
-    #     else:
-    #         return True
+    def has_valid_type(cls, obj):
+        # type: (...) -> bool
+        """
+        Returns `True` if `obj` has a valid type according to the `__types__` in this `VType`.
+        More precisely, for all classes in this class' `__types__` (=bases),
+
+         - if this class `t` is a `VType`, t.has_valid_type(obj) should return True
+         - otherwise, `isinstance(obj, t)` should return True
+
+        :param obj:
+        :return:
+        """
+        # should be an instance of all base types (except VType)
+        # for VTypes, we rely on has_valid_type instead of isinstance to avoid value check
+        for t in cls.__bases__:
+            if t is VType:
+                continue
+            elif isinstance(t, VTypeMeta):
+                if not t.has_valid_type(obj):
+                    return False
+            elif not isinstance(obj, t):
+                return False
+            else:
+                continue
+        return True
+
+    def has_valid_value(cls,
+                        obj,
+                        inherited_validators=True  # type: bool
+                        ):
+        # type: (...) -> bool
+        """
+        Returns True if `obj` is valid according to the `__validators__` on this class and in all the VTypes in its
+        `__types__` (ancestor classes). You may turn `inherited_validators=False` to only check local validators.
+
+        :param obj: the object to validate
+        :param inherited_validators: an optional boolean. If this is `True` (default), `has_valid_value` will also be
+            called on all ancestor VType classes and `True` will be returned only if all return `True`. Setting `False`
+            will only use the local `__validators__` on this class.
+        :return:
+        """
+        if cls._validator is not None:
+            try:
+                cls._validator.assert_valid('unnamed', obj)
+            except ValidationError:
+                return False
+
+        if inherited_validators:
+            for t in cls.__bases__:
+                if t is VType:
+                    continue
+                elif isinstance(t, VTypeMeta) and not t.has_valid_value(obj, inherited_validators=True):
+                    return False
+                else:
+                    continue
+
+        return True
 
 
 class VType(with_metaclass(VTypeMeta, object)):
