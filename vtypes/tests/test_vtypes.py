@@ -1,6 +1,7 @@
 #  Authors: Sylvain Marie <sylvain.marie@se.com>
 #
 #  Copyright (c) Schneider Electric Industries, 2020. All right reserved.
+import sys
 
 import pytest
 from six import with_metaclass
@@ -13,7 +14,8 @@ from vtypes import vtype
 @pytest.mark.parametrize('val_to_test,valid_type, valid_value',
                          [(1, True, True),
                           (-1, True, False),
-                          ('1', False, True)])
+                          ('1', False, True if sys.version_info < (3, 0) else False)  # in python 2 '1' > 0 returns True
+                          ])
 @pytest.mark.parametrize("validator_style", ['callable', 'tuple', 'dict', 'list'],
                          ids="validator_style={}".format)
 @pytest.mark.parametrize("vtype_style", ['function', 'class_unofficial'],
