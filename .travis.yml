@@ -27,6 +27,8 @@ install:
   # needs to be installed beforehand
   - pip install setuptools_scm
   - python ci_tools/py_install.py pip ci_tools/requirements-pip.txt
+  # this does not work anymore on python 2 so lets only do it when needed
+  - if [ "${TRAVIS_PYTHON_VERSION}" = "3.5" ]; then pip install mkdocs-material mkdocs; fi;
   - |
     if [ "${TRAVIS_PYTHON_VERSION}" = "2.7" ]; then
       echo "No need to install enforce pytypes checktypes BUT need to install future"
