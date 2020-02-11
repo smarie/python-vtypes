@@ -245,7 +245,7 @@ class VTypeMeta(ABCMeta):
     #     # then
     #     return len(cls.__validators__) == 0
 
-    def assert_valid(cls,
+    def validate(cls,
                      name,  # type: str
                      val
                      ):

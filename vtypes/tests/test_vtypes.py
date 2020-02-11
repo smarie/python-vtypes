@@ -49,11 +49,11 @@ def test_vtype_basic(validator_style, vtype_style, val_to_test, valid_type, vali
     # values test
     if valid_type and valid_value:
         assert isinstance(val_to_test, PositiveInt)
-        PositiveInt.assert_valid('s', val_to_test)
+        PositiveInt.validate('s', val_to_test)
     else:
         assert not isinstance(val_to_test, PositiveInt)
         with pytest.raises(ValidationError):
-            PositiveInt.assert_valid('s', val_to_test)
+            PositiveInt.validate('s', val_to_test)
     assert PositiveInt.has_valid_type(val_to_test) is valid_type
     assert PositiveInt.has_valid_value(val_to_test) is valid_value
     assert PositiveInt.has_valid_value(val_to_test, inherited_validators=False) is valid_value
@@ -95,11 +95,11 @@ def test_vtypes_inheritance(val_to_test, valid_type, valid_value):
     # values test
     if valid_type and valid_value:
         assert isinstance(val_to_test, NonEmptyStr)
-        NonEmptyStr.assert_valid('s', val_to_test)
+        NonEmptyStr.validate('s', val_to_test)
     else:
         assert not isinstance(val_to_test, NonEmptyStr)
         with pytest.raises(ValidationError):
-            NonEmptyStr.assert_valid('s', val_to_test)
+            NonEmptyStr.validate('s', val_to_test)
     assert NonEmptyStr.has_valid_type(val_to_test) is valid_type
     assert NonEmptyStr.has_valid_value(val_to_test) is valid_value
     # this one is always True since we do not look at inherited
