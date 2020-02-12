@@ -7,7 +7,7 @@ from inspect import currentframe, getmodule
 from six import with_metaclass
 
 try:
-    from typing import Type, Union, Tuple, Iterable, Mapping, Optional
+    from typing import Type, Union, Tuple, Iterable, Mapping, Optional, Any
     from valid8.common_syntax import ValidationFuncs, ValidationFuncDefinition, VFDefinitionElement
 except ImportError:
     pass
@@ -94,7 +94,7 @@ class VTypeMeta(ABCMeta):
     When a class using this metaclass is created, various checks are made to ensure that users will not create VTypes
     with other contents than base types and validators.
     """
-    ATTRS = ('__type__', '__validators__', '__help_msg__', '__error_type__', '__module__', '__qualname__')
+    ATTRS = ('__type__', '__validators__', '__help_msg__', '__error_type__', '__module__', '__qualname__', '__doc__')
 
     def __new__(mcls, name, bases, attrs):
         """
@@ -431,11 +431,12 @@ class VType(with_metaclass(VTypeMeta, object)):
 
 
 # noinspection PyShadowingBuiltins
-def vtype(name,            # type: str
-          base=(),         # type: Union[Type, Tuple[Type]]
-          validators=(),   # type: ValidationFuncs
-          help_msg=None,   # type: str
-          error_type=None  # type: Type[ValidationError]
+def vtype(name,             # type: str
+          base=(),          # type: Union[Type, Tuple[Type]]
+          validators=(),    # type: ValidationFuncs
+          help_msg=None,    # type: str
+          error_type=None,  # type: Type[ValidationError]
+          doc=None          # type: str
           ):
     # type: (...) -> Union[Type[VType], VTypeMeta]
     """
@@ -445,11 +446,16 @@ def vtype(name,            # type: str
     :param base: an optional type or tuple of types that will be used for type checking with `isinstance()`.
     :param validators: an optional validator or group of validators, following the valid8 syntax (either a callable,
         tuple, list, or dict).
+    :param help_msg: an optional help message (a string) for the validation errors
+    :param error_type: an optional error type (a subtype of `ValidationError`) for the validation errors
+    :param doc: an optional docstring
     :return:
     """
     new_type = VTypeMeta(name, (VType,), dict(__type__=base, __validators__=validators,
                                               __help_msg__=help_msg, __error_type__=error_type))
     new_type.__module__ = get_caller_module().__name__
+    if doc is not None:
+        new_type.__doc__ = doc
     return new_type
 
 
