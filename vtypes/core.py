@@ -473,3 +473,20 @@ def _get_callerframe(offset=0):
     for _ in range(2 + offset):
         frame = frame.f_back
     return frame
+
+
+def is_vtype(t  # type: Any
+             ):
+    # type: (...) -> bool
+    """
+    Returns `True` if `t` is a `VType`, `False` otherwise.
+    It is equivalent to `isinstance(t, VTypeMeta)` or `issubclass(t, VType)`, with exception catching.
+
+    :param t:
+    :return:
+    """
+    # noinspection PyBroadException
+    try:
+        return isinstance(t, VTypeMeta)
+    except Exception:
+        return False
