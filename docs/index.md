@@ -22,14 +22,13 @@
 A `VType` is a combination of :
 
  - a type **name**, for example `'PositiveInt'`
- - one or several **base types**: for example `int`.
+ - one or several **base types**: for example `int`. When several are provided, they all should match ("*and*" combination).
  - one or several **validators**: for example `lambda x: x >= 0`
 
-For example we can create a positive int:
+A `VType` is constructed using `vtype(name, type, validators, ...)`. For example we can create a positive int:
 
 ```python
 from vtypes import vtype
-
 PositiveInt = vtype('PositiveInt', int, {'should be positive': lambda x: x >= 0})
 ```
 
@@ -37,8 +36,31 @@ A `VType`'s main purpose is to behave like a type (therefore to be compliant wit
 
 ```python
 assert isinstance(1, PositiveInt)
-assert not isinstance(-1, PositiveInt)
+assert not isinstance(-1, PositiveInt)  # an int, but not >= 0
 ```
+
+An alternate way to define a `VType` is to define a python class inheriting from `VType`.
+
+ - **base types** can be either provided as superclass, or in the `__type__` class attribute,
+ 
+ - **validators** can be provided in the `__validators__` class attribute.
+
+
+So the following two classes are equivalent to our previous `PositiveInt` example:
+
+```python
+from vtypes import VType
+
+# type is provided in the ancestors
+class PositiveInt(int, VType):
+    __validators__ = {'should be positive': lambda x: x >= 0}
+
+# type is provided in __type__
+class PositiveInt2(VType):
+    __type__ = int
+    __validators__ = {'should be positive': lambda x: x >= 0}
+```
+
 
 ### b - goodies
 
@@ -95,7 +117,9 @@ If you wish to create even more compact callables, you may wish to look at [`min
 
 ### d - composition
 
-You can combine types, for example a nonempty string can be obtained by mixing `NonEmpty` and `str`:
+You can combine types, for example a nonempty string can be obtained by mixing `NonEmpty` and `str`.
+
+ - *with the compact style*: simply put the classes to combine in a tuple in the second `vtype` argument:
 
 ```python
 NonEmpty = vtype('NonEmpty', (), {'should be non empty': lambda x: len(x) > 0})
@@ -105,20 +129,9 @@ NonEmptyStr = vtype('NonEmptyStr', (NonEmpty, str), ())
 """A VType for non-empty strings"""
 ```
 
-
-### e - alternate coding style
-
-An alternate way to define `VType`s is to define a python class inheriting from `VType`.
-
- - the validators can be provided as a class member named `__validators__`
-
- - the base type(s) can be either provided as superclass(es), or as a class member named `__type__`.
-
-This provides an alternate style that developers might find handy in particular for entering docstrings and for making `VTypes` composition appear "just like normal python inheritance".
+ - *with the class style*: either use inheritance, or fill the `__type__` class attribute with a tuple
 
 ```python
-from vtypes import VType
-
 class NonEmpty(VType):
     """A VType describing non-empty containers, with strictly positive length.""" 
     __validators__ = {'should be non empty': lambda x: len(x) > 0}
@@ -126,12 +139,12 @@ class NonEmpty(VType):
 class NonEmptyStr(NonEmpty, str):
     """A VType for non-empty strings"""
 
-class AlternateNonEmptyStr(VType):
+class NonEmptyStr2(VType):
     """A VType for non-empty strings - alternate style"""
     __type__ = NonEmpty, str
 ```
 
-The vtypes work as expected:
+All these behave as expected:
 
 ```python
 assert isinstance('hoho', NonEmptyStr)
