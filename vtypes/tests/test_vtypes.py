@@ -7,8 +7,8 @@ import pytest
 from six import with_metaclass
 from valid8 import ValidationError
 
-from vtypes.core import VType, VTypeMeta
-from vtypes import vtype
+from vtypes.core import VTypeMeta
+from vtypes import vtype, is_vtype, VType
 
 
 @pytest.mark.parametrize('val_to_test,valid_type, valid_value',
@@ -18,7 +18,7 @@ from vtypes import vtype
                           ])
 @pytest.mark.parametrize("validator_style", ['callable', 'tuple', 'dict', 'list'],
                          ids="validator_style={}".format)
-@pytest.mark.parametrize("vtype_style", ['function', 'class_unofficial'],
+@pytest.mark.parametrize("vtype_style", ['function', 'class'],
                          ids="vtype_style={}".format)
 def test_vtype_basic(validator_style, vtype_style, val_to_test, valid_type, valid_value):
 
@@ -33,8 +33,7 @@ def test_vtype_basic(validator_style, vtype_style, val_to_test, valid_type, vali
     else:
         raise ValueError(validator_style)
 
-    if vtype_style == 'class_unofficial':
-        # this style will be abandoned
+    if vtype_style == 'class':
         class PositiveInt(VType):
             __type__ = int
             __validators__ = validators
@@ -63,7 +62,10 @@ def test_vtype_basic(validator_style, vtype_style, val_to_test, valid_type, vali
     assert not issubclass(int, VType)
     assert issubclass(PositiveInt, VType)
     assert not issubclass(VType, PositiveInt)
+
+    # This is the precise reason why we need to put the __type__ in the bases
     assert issubclass(PositiveInt, int)
+
     assert not issubclass(int, PositiveInt)
 
     for cls in (PositiveInt, ):
@@ -74,23 +76,61 @@ def test_vtype_basic(validator_style, vtype_style, val_to_test, valid_type, vali
     # make sure the string representation will be correct
     assert PositiveInt.__module__ == test_vtype_basic.__module__
 
+    # is_vtype
+    assert not is_vtype(VTypeMeta)
+    assert is_vtype(VType)
+    assert is_vtype(PositiveInt)
+    assert not is_vtype(1)
+    assert not is_vtype(int)
 
+
+def test_vtype_direct_vtype_meta():
+    """Tests that one MUST inherit from VType when using the class style """
+
+    with pytest.raises(TypeError):
+        # TypeError: It is not possible to create a VType without inheriting from `VType`
+        class NotInheritingVType(with_metaclass(VTypeMeta, object)):
+            pass
+
+
+def test_extra_class_attr():
+    """Tests that one cannot define other attributes on `VType` classes"""
+    with pytest.raises(TypeError):
+        # TypeError: It is not possible to create a VType without inheriting from `VType`
+        class NotInheritingVType(with_metaclass(VTypeMeta, object)):
+            pass
+
+
+@pytest.mark.parametrize("vtype_style", ['function', 'class', 'class2'],
+                         ids="vtype_style={}".format)
 @pytest.mark.parametrize('val_to_test,valid_type, valid_value',
                          [('1', True, True),
                           ('', True, False),
                           (1, False, False)])
-def test_vtypes_inheritance(val_to_test, valid_type, valid_value):
+def test_vtypes_inheritance(vtype_style, val_to_test, valid_type, valid_value):
     """ Test with inherited vtypes """
 
-    with pytest.raises(TypeError):
-        class NonEmpty(with_metaclass(VTypeMeta, object)):
-            __validators__ = {'should be non empty': lambda x: len(x) > 0}
+    validators = {'should be non empty': lambda x: len(x) > 0}
 
-    class NonEmpty(VType):
-        __validators__ = {'should be non empty': lambda x: len(x) > 0}
+    if vtype_style == 'class':
+        class NonEmpty(VType):
+            __validators__ = validators
 
-    class NonEmptyStr(NonEmpty, str):
-        pass
+        class NonEmptyStr(NonEmpty, str):
+            pass
+    elif vtype_style == 'class2':
+        class NonEmpty(VType):
+            __validators__ = validators
+
+        class NonEmptyStr(VType):
+            """A VType for non-empty strings - alternate style"""
+            __type__ = NonEmpty, str
+
+    elif vtype_style == 'function':
+        NonEmpty = vtype('NonEmpty', (), validators)
+        NonEmptyStr = vtype('NonEmptyStr', (NonEmpty, str), ())
+    else:
+        raise ValueError(vtype_style)
 
     # values test
     if valid_type and valid_value:
