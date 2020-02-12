@@ -263,8 +263,29 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#b-composition" class="md-nav__link">
-    b - composition
+  <a href="#b-goodies" class="md-nav__link">
+    b - goodies
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#c-validators-syntax" class="md-nav__link">
+    c - validators syntax
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#d-composition" class="md-nav__link">
+    d - composition
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#e-alternate-coding-style" class="md-nav__link">
+    e - alternate coding style
   </a>
   
 </li>
@@ -373,8 +394,29 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#b-composition" class="md-nav__link">
-    b - composition
+  <a href="#b-goodies" class="md-nav__link">
+    b - goodies
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#c-validators-syntax" class="md-nav__link">
+    c - validators syntax
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#d-composition" class="md-nav__link">
+    d - composition
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#e-alternate-coding-style" class="md-nav__link">
+    e - alternate coding style
   </a>
   
 </li>
@@ -428,7 +470,7 @@
 <p><a href="https://pypi.python.org/pypi/vtypes/"><img alt="Python versions" src="https://img.shields.io/pypi/pyversions/vtypes.svg" /></a> <a href="https://travis-ci.org/smarie/python-vtypes"><img alt="Build Status" src="https://travis-ci.org/smarie/python-vtypes.svg?branch=master" /></a> <a href="https://smarie.github.io/python-vtypes/junit/report.html"><img alt="Tests Status" src="https://smarie.github.io/python-vtypes/junit/junit-badge.svg?dummy=8484744" /></a> <a href="https://codecov.io/gh/smarie/python-vtypes"><img alt="codecov" src="https://codecov.io/gh/smarie/python-vtypes/branch/master/graph/badge.svg" /></a></p>
 <p><a href="https://smarie.github.io/python-vtypes/"><img alt="Documentation" src="https://img.shields.io/badge/doc-latest-blue.svg" /></a> <a href="https://pypi.python.org/pypi/vtypes/"><img alt="PyPI" src="https://img.shields.io/pypi/v/vtypes.svg" /></a> <a href="https://pepy.tech/project/vtypes"><img alt="Downloads" src="https://pepy.tech/badge/vtypes" /></a> <a href="https://pepy.tech/project/vtypes"><img alt="Downloads per week" src="https://pepy.tech/badge/vtypes/week" /></a> <a href="https://github.com/smarie/python-vtypes/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/smarie/python-vtypes.svg" /></a></p>
 <p><em>Validating types for python - use <code>isinstance()</code> to validate both type and value.</em></p>
-<p><code>vtypes</code> is a small library to define "validating types". These types can be used to add value validation on top of type checking anywhere where you usually rely on <code>isinstance()</code>. This can in particular be used to make validation schemas simpler and more readable, for example used in <a href="https://smarie.github.io/python-pyfields/#3-autofields"><code>pyfields</code></a>.</p>
+<p><code>vtypes</code> is a small library to define "validating types". These types can be used to <strong>add value validation on top of type checking</strong> anywhere where you usually rely on <code>isinstance()</code>. This can in particular be used to make validation schemas simpler and more readable, for example used in <a href="https://smarie.github.io/python-pyfields/#3-autofields"><code>pyfields</code></a>.</p>
 <h2 id="installing">Installing<a class="headerlink" href="#installing" title="Permanent link">&para;</a></h2>
 <div class="codehilite"><pre><span></span><code>&gt; pip install vtypes
 </code></pre></div>
@@ -436,7 +478,12 @@
 
 <h2 id="usage">Usage<a class="headerlink" href="#usage" title="Permanent link">&para;</a></h2>
 <h3 id="a-basics">a - basics<a class="headerlink" href="#a-basics" title="Permanent link">&para;</a></h3>
-<p>You create a <code>VType</code> by combining one or several base types with optional value validators following the <a href="https://smarie.github.io/python-valid8/validation_funcs/c_simple_syntax/"><code>valid8</code> simple syntax</a>.</p>
+<p>A <code>VType</code> is a combination of :</p>
+<ul>
+<li>a type <strong>name</strong>, for example <code>'PositiveInt'</code></li>
+<li>one or several <strong>base types</strong>: for example <code>int</code>.</li>
+<li>one or several <strong>validators</strong>: for example <code>lambda x: x &gt;= 0</code></li>
+</ul>
 <p>For example we can create a positive int:</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">vtypes</span> <span class="kn">import</span> <span class="n">vtype</span>
 
@@ -444,32 +491,120 @@
 </code></pre></div>
 
 
-<p><code>isinstance</code> works as expected:</p>
+<p>A <code>VType</code>'s main purpose is to behave like a type (therefore to be compliant with <code>isinstance</code>) and to validate both type and values at the same time when <code>isinstance</code> is called:</p>
 <div class="codehilite"><pre><span></span><code><span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">PositiveInt</span><span class="p">)</span>
 <span class="k">assert</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">PositiveInt</span><span class="p">)</span>
 </code></pre></div>
 
 
-<p>You can also get a more detailed error if you wish:</p>
-<div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">PositiveInt</span><span class="o">.</span><span class="n">assert_valid</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-<span class="n">ValidationError</span><span class="p">[</span><span class="ne">ValueError</span><span class="p">]:</span> <span class="n">Error</span> <span class="n">validating</span> <span class="p">[</span><span class="n">x</span><span class="o">=-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span> 
-   <span class="n">InvalidValue</span><span class="p">:</span> <span class="n">should</span> <span class="n">be</span> <span class="n">positive</span><span class="o">.</span> <span class="n">Function</span> <span class="p">[</span><span class="o">&lt;</span><span class="k">lambda</span><span class="o">&gt;</span><span class="p">]</span> <span class="n">returned</span> <span class="p">[</span><span class="kc">False</span><span class="p">]</span> <span class="k">for</span> <span class="n">value</span> <span class="o">-</span><span class="mf">1.</span>
+<h3 id="b-goodies">b - goodies<a class="headerlink" href="#b-goodies" title="Permanent link">&para;</a></h3>
+<p>In addition to this primary feature, a <code>VType</code> provides a few handy methods: </p>
+<ul>
+<li>detailed error messages with <code>validate</code> (note: a variable name should be provided, for example <code>'size'</code>).</li>
+</ul>
+<div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">PositiveInt</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="s1">&#39;size&#39;</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="n">ValidationError</span><span class="p">[</span><span class="ne">ValueError</span><span class="p">]:</span> <span class="n">Error</span> <span class="n">validating</span> <span class="p">[</span><span class="n">size</span><span class="o">=-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span> 
+   <span class="n">InvalidValue</span><span class="p">:</span> <span class="n">should</span> <span class="n">be</span> <span class="n">positive</span><span class="o">.</span> 
+   <span class="n">Function</span> <span class="p">[</span><span class="o">&lt;</span><span class="k">lambda</span><span class="o">&gt;</span><span class="p">]</span> <span class="n">returned</span> <span class="p">[</span><span class="kc">False</span><span class="p">]</span> <span class="k">for</span> <span class="n">value</span> <span class="o">-</span><span class="mf">1.</span>
 </code></pre></div>
 
 
-<h3 id="b-composition">b - composition<a class="headerlink" href="#b-composition" title="Permanent link">&para;</a></h3>
-<p>You can combine types, for example a positive int can be obtained by mixing <code>Positive</code> and <code>int</code>:</p>
-<div class="codehilite"><pre><span></span><code><span class="n">TODO</span>
+<ul>
+<li>partial checkers: <code>has_valid_type</code> for type-only, and <code>has_valid_value</code> for value-only:</li>
+</ul>
+<div class="codehilite"><pre><span></span><code><span class="k">assert</span> <span class="n">PositiveInt</span><span class="o">.</span><span class="n">has_valid_type</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>       <span class="c1"># -1 is an int</span>
+<span class="k">assert</span> <span class="ow">not</span> <span class="n">PositiveInt</span><span class="o">.</span><span class="n">has_valid_value</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># -1 &lt; 0</span>
+</code></pre></div>
+
+
+<p>Finally, you may wish to use <code>is_vtype</code> to check if anything is a <code>VType</code>:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">vtypes</span> <span class="kn">import</span> <span class="n">is_vtype</span>
+
+<span class="k">assert</span> <span class="n">is_vtype</span><span class="p">(</span><span class="n">PositiveInt</span><span class="p">)</span>
+<span class="k">assert</span> <span class="ow">not</span> <span class="n">is_vtype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+<span class="k">assert</span> <span class="ow">not</span> <span class="n">is_vtype</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</code></pre></div>
+
+
+<h3 id="c-validators-syntax">c - validators syntax<a class="headerlink" href="#c-validators-syntax" title="Permanent link">&para;</a></h3>
+<p>There are many ways to declare validators:</p>
+<ul>
+<li>
+<p>a single callable</p>
+</li>
+<li>
+<p>a single tuple <code>(&lt;callable&gt;, &lt;error_msg&gt;)</code>, <code>(&lt;callable&gt;, &lt;failure_type&gt;)</code> or <code>(&lt;callable&gt;, &lt;error_msg&gt;, &lt;failure_type&gt;)</code></p>
+</li>
+<li>
+<p>a list of such callables and tuples</p>
+</li>
+<li>
+<p>a <strong>dictionary</strong> where keys are <code>&lt;callable&gt;</code>, <code>&lt;error_msg&gt;</code>, or <code>&lt;failure_type&gt;</code> and values are one or two (tuple) of such elements. This is at least for the author, the most intuitive and readable style:</p>
+</li>
+</ul>
+<div class="codehilite"><pre><span></span><code><span class="n">ConstrainedInt</span> <span class="o">=</span> <span class="n">vtype</span><span class="p">(</span><span class="s1">&#39;ConstrainedInt&#39;</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> 
+                       <span class="p">{</span><span class="s1">&#39;should be positive&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span>
+                        <span class="s1">&#39;should be a multiple of 3&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">%</span> <span class="mi">3</span><span class="p">})</span>
+</code></pre></div>
+
+
+<p>Note that this syntax is <a href="https://smarie.github.io/python-valid8/validation_funcs/c_simple_syntax/"><code>valid8</code> simple syntax</a>.</p>
+<p>If you wish to create even more compact callables, you may wish to look at <a href="https://smarie.github.io/python-mini-lambda/"><code>mini_lambda</code></a>.</p>
+<h3 id="d-composition">d - composition<a class="headerlink" href="#d-composition" title="Permanent link">&para;</a></h3>
+<p>You can combine types, for example a nonempty string can be obtained by mixing <code>NonEmpty</code> and <code>str</code>:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">NonEmpty</span> <span class="o">=</span> <span class="n">vtype</span><span class="p">(</span><span class="s1">&#39;NonEmpty&#39;</span><span class="p">,</span> <span class="p">(),</span> <span class="p">{</span><span class="s1">&#39;should be non empty&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">})</span>
+<span class="sd">&quot;&quot;&quot;A VType describing non-empty containers, with strictly positive length.&quot;&quot;&quot;</span>
+
+<span class="n">NonEmptyStr</span> <span class="o">=</span> <span class="n">vtype</span><span class="p">(</span><span class="s1">&#39;NonEmptyStr&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">NonEmpty</span><span class="p">,</span> <span class="nb">str</span><span class="p">),</span> <span class="p">())</span>
+<span class="sd">&quot;&quot;&quot;A VType for non-empty strings&quot;&quot;&quot;</span>
+</code></pre></div>
+
+
+<h3 id="e-alternate-coding-style">e - alternate coding style<a class="headerlink" href="#e-alternate-coding-style" title="Permanent link">&para;</a></h3>
+<p>An alternate way to define <code>VType</code>s is to define a python class inheriting from <code>VType</code>.</p>
+<ul>
+<li>
+<p>the validators can be provided as a class member named <code>__validators__</code></p>
+</li>
+<li>
+<p>the base type(s) can be either provided as superclass(es), or as a class member named <code>__type__</code>.</p>
+</li>
+</ul>
+<p>This provides an alternate style that developers might find handy in particular for entering docstrings and for making <code>VTypes</code> composition appear "just like normal python inheritance".</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">vtypes</span> <span class="kn">import</span> <span class="n">VType</span>
+
+<span class="k">class</span> <span class="nc">NonEmpty</span><span class="p">(</span><span class="n">VType</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A VType describing non-empty containers, with strictly positive length.&quot;&quot;&quot;</span> 
+    <span class="n">__validators__</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;should be non empty&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">}</span>
+
+<span class="k">class</span> <span class="nc">NonEmptyStr</span><span class="p">(</span><span class="n">NonEmpty</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A VType for non-empty strings&quot;&quot;&quot;</span>
+
+<span class="k">class</span> <span class="nc">AlternateNonEmptyStr</span><span class="p">(</span><span class="n">VType</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A VType for non-empty strings - alternate style&quot;&quot;&quot;</span>
+    <span class="n">__type__</span> <span class="o">=</span> <span class="n">NonEmpty</span><span class="p">,</span> <span class="nb">str</span>
+</code></pre></div>
+
+
+<p>The vtypes work as expected:</p>
+<div class="codehilite"><pre><span></span><code><span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="s1">&#39;hoho&#39;</span><span class="p">,</span> <span class="n">NonEmptyStr</span><span class="p">)</span>
+<span class="k">assert</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">NonEmptyStr</span><span class="p">)</span>
+<span class="k">assert</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">NonEmptyStr</span><span class="p">)</span>
 </code></pre></div>
 
 
 <h2 id="main-features">Main features<a class="headerlink" href="#main-features" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>TODO</strong></li>
+<li>Validate both type and value with <code>isinstance</code>, thanks to easy-to-write "validating types"</li>
+<li><code>has_valid_type</code> and <code>has_valid_value</code> methods provided for easy auditing, as well as <code>is_vtype</code></li>
+<li>Validation syntax fully compliant with <code>valid8</code>. Compliant error message available through a <code>validate()</code> method</li>
+<li>v-types are composable so that creating a library of reusable elements is straightforward (note: should we provide one in this library based on <code>valid8</code> <a href="https://smarie.github.io/python-valid8/validation_funcs/b_base_validation_lib/">library</a> ?)  </li>
+<li>Alternate class-style available to perform composition using inheritance, and write docstrings more easily.</li>
 </ul>
 <h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="https://gitlab.com/yahya-abou-imran/checktypes"><code>checktypes</code></a>, that was a great source of inspiration. The only reason for recreating something new was the capability to use the <code>valid8</code> syntax for validators (as well as its standardized exceptions).</li>
+<li><a href="https://gitlab.com/yahya-abou-imran/checktypes"><code>checktypes</code></a>, that was a great source of inspiration. The only reason I ended up recreating something new a couple years after discovering it, was that I really wanted to leverage the <code>valid8</code> syntax for validators (as well as its standardized exceptions).</li>
 </ul>
 <p><em>Do you like this library ? You might also like <a href="https://github.com/smarie/OVERVIEW#python">my other python libraries</a></em> </p>
 <h2 id="want-to-contribute">Want to contribute ?<a class="headerlink" href="#want-to-contribute" title="Permanent link">&para;</a></h2>
