@@ -196,6 +196,8 @@ class VTypeMeta(ABCMeta):
             # create the associated validator
             if len(_vs) > 0:
                 cls._validator = VTypeValidator(cls, _vs, help_msg=cls.__help_msg__, error_type=cls.__error_type__)
+            else:
+                cls._validator = None
 
     def __call__(cls, *args, **kwargs):
         """
