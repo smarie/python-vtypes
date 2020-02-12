@@ -141,6 +141,16 @@ class VTypeMeta(ABCMeta):
                                 % (VTypeMeta.ATTRS, extra))
 
             # finally create the type
+            # old: we remove everything from the bases
+            # attrs['__type__'] = tuple(t for t in bases if t is not VType)
+            # bases = (VType, )
+            # the issue with doing this is that issubclass(PositiveInt, int) would *never* be able to work since it does
+            # not call __subclasscheck__ on VTypeMeta but on the type of <int>.
+            # of course we do not want to encourage users writing issubclass with VTypes, but since they are types one
+            # day or another someone will do that ; since we have the choice let's use the less counter-intuitive
+            # behaviour for is_subclass.
+
+            # new: we put everything in the bases
             return super(VTypeMeta, mcls).__new__(mcls, name, bases, attrs)
 
     def __init__(cls,    # type: VTypeMeta
@@ -229,23 +239,18 @@ class VTypeMeta(ABCMeta):
     # def __subclasscheck__(cls,  # type:  VTypeMeta
     #                       subclass):
     #     """
+    #     Nothing to implement here - all base types are defined as the bases of the class so the default implementation
+    #     should be ok.
     #
     #     :param subclass:
     #     :return:
     #     """
-    #     if cls is subclass:                    # trivial identity
-    #         return True
-    #     elif type(subclass) is not VTypeMeta:  # subclass is not a VType
+    #     if not isinstance(subclass, VTypeMeta):
     #         return False
-    #     elif cls in subclass.__bases__:        # the parent is directly one of the bases of the child
+    #     elif len(cls.__type__) > 0:
+    #         return issubclass(subclass, cls.__type__)
+    #     else:
     #         return True
-    #
-    #     # first the type should be compliant with all
-    #     if not all(issubclass(subclass, parent_base) for parent_base in cls.__bases__):
-    #         return False
-    #
-    #     # then
-    #     return len(cls.__validators__) == 0
 
     def validate(cls,
                      name,  # type: str
