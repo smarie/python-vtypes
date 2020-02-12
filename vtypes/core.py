@@ -219,8 +219,8 @@ class VTypeMeta(ABCMeta):
         :param obj:
         :return:
         """
-        # first make sure that `obj` is an instance of all bases (this includes value validation in case of VTypes)
-        if not all(isinstance(obj, t) for t in cls.__bases__ if t is not VType):
+        # first make sure that `obj` is an instance of all the base types
+        if not all(isinstance(obj, t) for t in cls.__type__):
             return False
 
         # then validate the value with validators on this class
@@ -283,12 +283,12 @@ class VTypeMeta(ABCMeta):
         :param obj:
         :return:
         """
-        # should be an instance of all base types (except VType)
+        # should be an instance of all base types
         # for VTypes, we rely on has_valid_type instead of isinstance to avoid value check
-        for t in cls.__bases__:
-            if t is VType:
-                continue
-            elif isinstance(t, VTypeMeta):
+        for t in cls.__type__:
+            # if t is VType:
+            #     continue
+            if isinstance(t, VTypeMeta):
                 if not t.has_valid_type(obj):
                     return False
             elif not isinstance(obj, t):
@@ -319,10 +319,10 @@ class VTypeMeta(ABCMeta):
                 return False
 
         if inherited_validators:
-            for t in cls.__bases__:
-                if t is VType:
-                    continue
-                elif isinstance(t, VTypeMeta) and not t.has_valid_value(obj, inherited_validators=True):
+            for t in cls.__type__:
+                # if t is VType:
+                #     continue
+                if isinstance(t, VTypeMeta) and not t.has_valid_value(obj, inherited_validators=True):
                     return False
                 else:
                     continue
