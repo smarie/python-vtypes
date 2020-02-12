@@ -283,13 +283,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#e-alternate-coding-style" class="md-nav__link">
-    e - alternate coding style
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -414,13 +407,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#e-alternate-coding-style" class="md-nav__link">
-    e - alternate coding style
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -481,19 +467,41 @@
 <p>A <code>VType</code> is a combination of :</p>
 <ul>
 <li>a type <strong>name</strong>, for example <code>'PositiveInt'</code></li>
-<li>one or several <strong>base types</strong>: for example <code>int</code>.</li>
+<li>one or several <strong>base types</strong>: for example <code>int</code>. When several are provided, they all should match ("<em>and</em>" combination).</li>
 <li>one or several <strong>validators</strong>: for example <code>lambda x: x &gt;= 0</code></li>
 </ul>
-<p>For example we can create a positive int:</p>
+<p>A <code>VType</code> is constructed using <code>vtype(name, type, validators, ...)</code>. For example we can create a positive int:</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">vtypes</span> <span class="kn">import</span> <span class="n">vtype</span>
-
 <span class="n">PositiveInt</span> <span class="o">=</span> <span class="n">vtype</span><span class="p">(</span><span class="s1">&#39;PositiveInt&#39;</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;should be positive&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">})</span>
 </code></pre></div>
 
 
 <p>A <code>VType</code>'s main purpose is to behave like a type (therefore to be compliant with <code>isinstance</code>) and to validate both type and values at the same time when <code>isinstance</code> is called:</p>
 <div class="codehilite"><pre><span></span><code><span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">PositiveInt</span><span class="p">)</span>
-<span class="k">assert</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">PositiveInt</span><span class="p">)</span>
+<span class="k">assert</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">PositiveInt</span><span class="p">)</span>  <span class="c1"># an int, but not &gt;= 0</span>
+</code></pre></div>
+
+
+<p>An alternate way to define a <code>VType</code> is to define a python class inheriting from <code>VType</code>.</p>
+<ul>
+<li>
+<p><strong>base types</strong> can be either provided as superclass, or in the <code>__type__</code> class attribute,</p>
+</li>
+<li>
+<p><strong>validators</strong> can be provided in the <code>__validators__</code> class attribute.</p>
+</li>
+</ul>
+<p>So the following two classes are equivalent to our previous <code>PositiveInt</code> example:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">vtypes</span> <span class="kn">import</span> <span class="n">VType</span>
+
+<span class="c1"># type is provided in the ancestors</span>
+<span class="k">class</span> <span class="nc">PositiveInt</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">VType</span><span class="p">):</span>
+    <span class="n">__validators__</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;should be positive&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">}</span>
+
+<span class="c1"># type is provided in __type__</span>
+<span class="k">class</span> <span class="nc">PositiveInt2</span><span class="p">(</span><span class="n">VType</span><span class="p">):</span>
+    <span class="n">__type__</span> <span class="o">=</span> <span class="nb">int</span>
+    <span class="n">__validators__</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;should be positive&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">}</span>
 </code></pre></div>
 
 
@@ -552,7 +560,10 @@
 <p>Note that this syntax is <a href="https://smarie.github.io/python-valid8/validation_funcs/c_simple_syntax/"><code>valid8</code> simple syntax</a>.</p>
 <p>If you wish to create even more compact callables, you may wish to look at <a href="https://smarie.github.io/python-mini-lambda/"><code>mini_lambda</code></a>.</p>
 <h3 id="d-composition">d - composition<a class="headerlink" href="#d-composition" title="Permanent link">&para;</a></h3>
-<p>You can combine types, for example a nonempty string can be obtained by mixing <code>NonEmpty</code> and <code>str</code>:</p>
+<p>You can combine types, for example a nonempty string can be obtained by mixing <code>NonEmpty</code> and <code>str</code>.</p>
+<ul>
+<li><em>with the compact style</em>: simply put the classes to combine in a tuple in the second <code>vtype</code> argument:</li>
+</ul>
 <div class="codehilite"><pre><span></span><code><span class="n">NonEmpty</span> <span class="o">=</span> <span class="n">vtype</span><span class="p">(</span><span class="s1">&#39;NonEmpty&#39;</span><span class="p">,</span> <span class="p">(),</span> <span class="p">{</span><span class="s1">&#39;should be non empty&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">})</span>
 <span class="sd">&quot;&quot;&quot;A VType describing non-empty containers, with strictly positive length.&quot;&quot;&quot;</span>
 
@@ -561,33 +572,23 @@
 </code></pre></div>
 
 
-<h3 id="e-alternate-coding-style">e - alternate coding style<a class="headerlink" href="#e-alternate-coding-style" title="Permanent link">&para;</a></h3>
-<p>An alternate way to define <code>VType</code>s is to define a python class inheriting from <code>VType</code>.</p>
 <ul>
-<li>
-<p>the validators can be provided as a class member named <code>__validators__</code></p>
-</li>
-<li>
-<p>the base type(s) can be either provided as superclass(es), or as a class member named <code>__type__</code>.</p>
-</li>
+<li><em>with the class style</em>: either use inheritance, or fill the <code>__type__</code> class attribute with a tuple</li>
 </ul>
-<p>This provides an alternate style that developers might find handy in particular for entering docstrings and for making <code>VTypes</code> composition appear "just like normal python inheritance".</p>
-<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">vtypes</span> <span class="kn">import</span> <span class="n">VType</span>
-
-<span class="k">class</span> <span class="nc">NonEmpty</span><span class="p">(</span><span class="n">VType</span><span class="p">):</span>
+<div class="codehilite"><pre><span></span><code><span class="k">class</span> <span class="nc">NonEmpty</span><span class="p">(</span><span class="n">VType</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;A VType describing non-empty containers, with strictly positive length.&quot;&quot;&quot;</span> 
     <span class="n">__validators__</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;should be non empty&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">}</span>
 
 <span class="k">class</span> <span class="nc">NonEmptyStr</span><span class="p">(</span><span class="n">NonEmpty</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;A VType for non-empty strings&quot;&quot;&quot;</span>
 
-<span class="k">class</span> <span class="nc">AlternateNonEmptyStr</span><span class="p">(</span><span class="n">VType</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">NonEmptyStr2</span><span class="p">(</span><span class="n">VType</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;A VType for non-empty strings - alternate style&quot;&quot;&quot;</span>
     <span class="n">__type__</span> <span class="o">=</span> <span class="n">NonEmpty</span><span class="p">,</span> <span class="nb">str</span>
 </code></pre></div>
 
 
-<p>The vtypes work as expected:</p>
+<p>All these behave as expected:</p>
 <div class="codehilite"><pre><span></span><code><span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="s1">&#39;hoho&#39;</span><span class="p">,</span> <span class="n">NonEmptyStr</span><span class="p">)</span>
 <span class="k">assert</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">NonEmptyStr</span><span class="p">)</span>
 <span class="k">assert</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">NonEmptyStr</span><span class="p">)</span>
