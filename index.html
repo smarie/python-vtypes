@@ -77,7 +77,7 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
-      <a href="#python-validating-types-vtypes" tabindex="0" class="md-skip">
+      <a href="#vtypes-validating-types" tabindex="0" class="md-skip">
         Skip to content
       </a>
     
@@ -466,7 +466,7 @@
                   <a href="https://github.com/smarie/python-vtypes/edit/master/docs/index.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
                 
                 
-                <h1 id="python-validating-types-vtypes">python validating types (vtypes)<a class="headerlink" href="#python-validating-types-vtypes" title="Permanent link">&para;</a></h1>
+                <h1 id="vtypes-validating-types"><code>vtypes</code> - validating types<a class="headerlink" href="#vtypes-validating-types" title="Permanent link">&para;</a></h1>
 <p><a href="https://pypi.python.org/pypi/vtypes/"><img alt="Python versions" src="https://img.shields.io/pypi/pyversions/vtypes.svg" /></a> <a href="https://travis-ci.org/smarie/python-vtypes"><img alt="Build Status" src="https://travis-ci.org/smarie/python-vtypes.svg?branch=master" /></a> <a href="https://smarie.github.io/python-vtypes/junit/report.html"><img alt="Tests Status" src="https://smarie.github.io/python-vtypes/junit/junit-badge.svg?dummy=8484744" /></a> <a href="https://codecov.io/gh/smarie/python-vtypes"><img alt="codecov" src="https://codecov.io/gh/smarie/python-vtypes/branch/master/graph/badge.svg" /></a></p>
 <p><a href="https://smarie.github.io/python-vtypes/"><img alt="Documentation" src="https://img.shields.io/badge/doc-latest-blue.svg" /></a> <a href="https://pypi.python.org/pypi/vtypes/"><img alt="PyPI" src="https://img.shields.io/pypi/v/vtypes.svg" /></a> <a href="https://pepy.tech/project/vtypes"><img alt="Downloads" src="https://pepy.tech/badge/vtypes" /></a> <a href="https://pepy.tech/project/vtypes"><img alt="Downloads per week" src="https://pepy.tech/badge/vtypes/week" /></a> <a href="https://github.com/smarie/python-vtypes/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/smarie/python-vtypes.svg" /></a></p>
 <p><em>Validating types for python - use <code>isinstance()</code> to validate both type and value.</em></p>
@@ -600,7 +600,7 @@
 <li><code>has_valid_type</code> and <code>has_valid_value</code> methods provided for easy auditing, as well as <code>is_vtype</code></li>
 <li>Validation syntax fully compliant with <code>valid8</code>. Compliant error message available through a <code>validate()</code> method</li>
 <li>v-types are composable so that creating a library of reusable elements is straightforward (note: should we provide one in this library based on <code>valid8</code> <a href="https://smarie.github.io/python-valid8/validation_funcs/b_base_validation_lib/">library</a> ?)  </li>
-<li>Alternate class-style available to perform composition using inheritance, and write docstrings more easily.</li>
+<li>Two styles: <code>vtype(...)</code> constructor method, as well as an alternate <code>class ...(VType)</code> style to perform composition using inheritance, and write docstrings more easily.</li>
 </ul>
 <h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>

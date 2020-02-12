@@ -265,8 +265,8 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#010-todo" class="md-nav__link">
-    0.1.0 - TODO
+  <a href="#050-first-public-version" class="md-nav__link">
+    0.5.0 - First public version
   </a>
   
 </li>
@@ -303,8 +303,8 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#010-todo" class="md-nav__link">
-    0.1.0 - TODO
+  <a href="#050-first-public-version" class="md-nav__link">
+    0.5.0 - First public version
   </a>
   
 </li>
@@ -329,8 +329,14 @@
                 
                 
                 <h1 id="changelog">Changelog<a class="headerlink" href="#changelog" title="Permanent link">&para;</a></h1>
-<h3 id="010-todo">0.1.0 - TODO<a class="headerlink" href="#010-todo" title="Permanent link">&para;</a></h3>
-<p>TODO</p>
+<h3 id="050-first-public-version">0.5.0 - First public version<a class="headerlink" href="#050-first-public-version" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Validate both type and value with <code>isinstance</code>, thanks to easy-to-write "validating types"</li>
+<li><code>has_valid_type</code> and <code>has_valid_value</code> methods provided for easy auditing, as well as <code>is_vtype</code></li>
+<li>Validation syntax fully compliant with <code>valid8</code>. Compliant error message available through a <code>validate()</code> method</li>
+<li>v-types are composable so that creating a library of reusable elements is straightforward (note: should we provide one in this library based on <code>valid8</code> <a href="https://smarie.github.io/python-valid8/validation_funcs/b_base_validation_lib/">library</a> ?)  </li>
+<li>Two styles: <code>vtype(...)</code> constructor method, as well as an alternate <code>class ...(VType)</code> style to perform composition using inheritance, and write docstrings more easily.</li>
+</ul>
                 
                   
                 
