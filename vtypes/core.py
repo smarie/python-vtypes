@@ -253,9 +253,9 @@ class VTypeMeta(ABCMeta):
     #         return True
 
     def validate(cls,
-                     name,  # type: str
-                     val
-                     ):
+                 name,  # type: str
+                 val
+                 ):
         """
         Class method that can be used to check if some value is valid. A name should be provided so that the
         error messages are human-friendly.
@@ -354,35 +354,7 @@ class VType(with_metaclass(VTypeMeta, object)):
     _validator = None      # type: Validator
 
     # @classmethod
-    # def is_vtype(cls):
-    #     # type: (...) -> bool
-    #     """
-    #     Used by the metaclass to determine if a class is a vtype
-    #     :return:
-    #     """
-    #     return True
-
-    # @classmethod
     # def init_vtype(cls):
-    #     """
-    #     Used by the metaclass to create the validator when the class is instantiated
-    #     :return:
-    #     """
-    #     # make sure the types become a tuple
-    #     # try:
-    #     #     cls.__type__ = tuple(cls.__type__)
-    #     # except TypeError:
-    #     #     cls.__type__ = (cls.__type__, )
-    #
-    #     cls.__type__ = classproperty()
-    #
-    #     # make sure the validators become an iterable
-    #     _vs = _process_validators(cls.__validators__)
-    #     cls.__validators__ = _vs
-    #
-    #     # create the associated validator
-    #     if len(_vs) > 0:
-    #         cls._validator = Validator(*_vs, help_msg=cls.__help_msg__, error_type=cls.__error_type__)
 
     def __init__(self):
         raise Exception("It does not make sense to instantiate a VType")
@@ -392,49 +364,14 @@ class VType(with_metaclass(VTypeMeta, object)):
     #                  name,  # type: str
     #                  val
     #                  ):
-    #     """
-    #     Class method that can be used to check if some value is valid. A name should be provided so that the
-    #     error messages are human-friendly.
-    #
-    #     :param name:
-    #     :param val:
-    #     :return:
-    #     """
-    #     # validate type
-    #     validate(name, val, instance_of=cls.__type__, help_msg=cls.__help_msg__, error_type=cls.__error_type__)
-    #
-    #     # apply validators
-    #     if cls._validator is not None:
-    #         cls._validator.assert_valid(name, val, help_msg=cls.__help_msg__, error_type=cls.__error_type__)
-    #
+
     # # --- boolean checks (no exception) ---
     #
     # @classmethod
     # def has_valid_type(cls, obj):
-    #     # type: (...) -> bool
-    #     """
-    #
-    #     :param obj:
-    #     :return:
-    #     """
-    #     return all(isinstance(obj, t) for t in cls.__type__)
     #
     # @classmethod
     # def has_valid_value(cls, obj):
-    #     # type: (...) -> bool
-    #     """
-    #
-    #     :param obj:
-    #     :return:
-    #     """
-    #     try:
-    #         cls._validator.assert_valid('unnamed', obj)
-    #     except (AttributeError,  # cls._validator is None
-    #             ValidationError  # cls._validator is not None
-    #             ):
-    #         return False
-    #     else:
-    #         return True
 
 
 # noinspection PyShadowingBuiltins
