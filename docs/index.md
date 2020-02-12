@@ -1,4 +1,4 @@
-# python validating types (vtypes)
+# `vtypes` - validating types
 
 [![Python versions](https://img.shields.io/pypi/pyversions/vtypes.svg)](https://pypi.python.org/pypi/vtypes/) [![Build Status](https://travis-ci.org/smarie/python-vtypes.svg?branch=master)](https://travis-ci.org/smarie/python-vtypes) [![Tests Status](https://smarie.github.io/python-vtypes/junit/junit-badge.svg?dummy=8484744)](https://smarie.github.io/python-vtypes/junit/report.html) [![codecov](https://codecov.io/gh/smarie/python-vtypes/branch/master/graph/badge.svg)](https://codecov.io/gh/smarie/python-vtypes)
 
