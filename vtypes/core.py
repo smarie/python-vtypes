@@ -1,6 +1,7 @@
 #  Authors: Sylvain Marie <sylvain.marie@se.com>
 #
 #  Copyright (c) Schneider Electric Industries, 2020. All right reserved.
+from sys import version_info as python_version_info
 from abc import ABCMeta
 from inspect import currentframe, getmodule
 
@@ -95,6 +96,8 @@ class VTypeMeta(ABCMeta):
     with other contents than base types and validators.
     """
     ATTRS = ('__type__', '__validators__', '__help_msg__', '__error_type__', '__module__', '__qualname__', '__doc__')
+    if python_version_info >= (3, 13):
+        ATTRS += ('__static_attributes__', '__firstlineno__')
 
     def __new__(mcls, name, bases, attrs):
         """
